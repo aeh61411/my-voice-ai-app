@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Note AI Assistant</title>
+    <style>
+        /* NEW NEON STYLES! */
+        body {
+            font-family: 'Consolas', 'Courier New', monospace;
+            background-color: #0c0c14; /* Very dark blue, almost black */
+            color: #e0e0e0; /* Light grey text */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .container {
+            background-color: rgba(26, 26, 46, 0.5); /* Semi-transparent dark container */
+            padding: 40px;
+            border-radius: 12px;
+            border: 2px solid #333;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.2); /* Subtle cyan glow */
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+            backdrop-filter: blur(5px);
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            /* This is the magic for the neon text glow! */
+            text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 20px #00ffff;
+        }
+
+        #note-textarea {
+            width: 100%;
+            height: 200px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 2px solid #4a4a68;
+            padding: 12px;
+            font-size: 16px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            resize: vertical;
+            background-color: #1a1a2e; /* Dark terminal background */
+            color: #e0e0e0;
+            box-sizing: border-box; /* Important for padding and border */
+            outline: none; /* Removes the default browser outline */
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        #note-textarea:focus {
+            border-color: #00ffff; /* Bright cyan border when you click on it */
+            box-shadow: 0 0 10px #00ffff;
+        }
+
+        button#start-btn {
+            background-color: transparent;
+            color: #ff00ff; /* Bright magenta color */
+            border: 2px solid #ff00ff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            /* The magic for the button glow! */
+            box-shadow: 0 0 5px #ff00ff, 0 0 15px #ff00ff, 0 0 30px #ff00ff, 0 0 60px #ff00ff;
+        }
+
+        button#start-btn:hover {
+            background-color: rgba(255, 0, 255, 0.1);
+            color: #fff;
+            text-shadow: 0 0 8px #ff00ff;
+        }
+        
+        #status {
+            margin-top: 15px;
+            font-style: italic;
+            color: #888;
+            transition: color 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Voice Note AI Assistant</h1>
+        <textarea id="note-textarea" placeholder="Click the glowing button and speak..."></textarea>
+        <button id="start-btn">Start Listening</button>
+        <p id="status">Status: Idle</p>
+    </div>
+
+    <script>
+        // THIS JAVASCRIPT IS EXACTLY THE SAME - NO CHANGES NEEDED!
+        const startBtn = document.getElementById('start-btn');
+        const noteTextarea = document.getElementById('note-textarea');
+        const statusDiv = document.getElementById('status');
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("Sorry, your browser doesn't support Speech Recognition. Please try Google Chrome.");
+        } else {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            let isListening = false;
+            let finalTranscript = '';
+
+            recognition.onstart = () => {
+                isListening = true;
+                statusDiv.textContent = 'Status: Listening...';
+                startBtn.textContent = 'Stop Listening';
+                finalTranscript = noteTextarea.value; 
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                statusDiv.textContent = 'Status: Idle';
+                startBtn.textContent = 'Start Listening';
+            };
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript + ' ';
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+                noteTextarea.value = finalTranscript + interimTranscript;
+            };
+
+            startBtn.addEventListener('click', () => {
+                if (isListening) {
+                    recognition.stop();
+                } else {
+                    recognition.start();
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>
