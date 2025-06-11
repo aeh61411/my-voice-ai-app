@@ -4,113 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voice Note AI Assistant</title>
-    <!-- We still need the Supabase library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* --- NEW & IMPROVED NEON STYLES! --- */
-        body {
-            font-family: 'Consolas', 'Courier New', monospace;
-            background-color: #0c0c14; /* Very dark blue, almost black */
-            color: #e0e0e0;
-            margin: 0;
-            padding: 40px 20px; /* Add padding to top/bottom for scrolling */
-        }
-
-        .container {
-            background-color: rgba(26, 26, 46, 0.5);
-            padding: 30px;
-            border-radius: 12px;
-            border: 1px solid #333;
-            box-shadow: 0 0 25px rgba(100, 100, 220, 0.2);
-            text-align: center;
-            width: 90%;
-            max-width: 700px; /* Made container wider */
-            backdrop-filter: blur(8px);
-            margin: auto; /* Center the container */
-            min-height: 500px;
-        }
-
-        h1 {
-            font-size: 28px;
-            margin-bottom: 25px;
-            color: #fff;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 0 7px #00ffff, 0 0 15px #00ffff, 0 0 30px #00ffff, 0 0 45px #ff00ff; /* Pink & Cyan Gradient Glow */
-        }
-        
-        textarea {
-            width: 100%;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            border: 2px solid #4a4a68;
-            padding: 12px;
-            font-size: 16px;
-            font-family: inherit;
-            resize: vertical;
-            background-color: #1a1a2e;
-            color: #e0e0e0;
-            box-sizing: border-box;
-            outline: none;
-            transition: all 0.3s;
-        }
-
-        textarea:focus {
-            border-color: #00ffff;
-            box-shadow: 0 0 10px #00ffff;
-        }
-
-        button {
-            background-color: transparent;
-            border: 2px solid;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: bold;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin: 5px;
-        }
-
-        /* --- NEW TAB STYLES --- */
-        .tab-nav {
-            display: flex;
-            border-bottom: 2px solid #4a4a68;
-            margin-bottom: 25px;
-        }
-        .tab-nav button {
-            border: none;
-            border-bottom: 3px solid transparent;
-            box-shadow: none;
-            border-radius: 0;
-            color: #aaa;
-            padding-bottom: 15px;
-            margin: 0 10px;
-        }
-        .tab-nav button.active {
-            color: #fff;
-            border-bottom-color: #ff00ff; /* Active tab has a magenta underline */
-            text-shadow: 0 0 5px #ff00ff;
-        }
-        #brainstormer-panel { display: none; } /* Hide the second tab by default */
-
-        /* --- NEW HEADER STYLES --- */
-        .app-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            font-size: 12px;
-            color: #aaa;
-        }
-        
-        /* Specific Button Styles */
+        body { font-family: 'Consolas', 'Courier New', monospace; background-color: #0c0c14; color: #e0e0e0; margin: 0; padding: 40px 20px; }
+        .container { background-color: rgba(26, 26, 46, 0.5); padding: 30px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 0 25px rgba(100, 100, 220, 0.2); text-align: center; width: 90%; max-width: 700px; backdrop-filter: blur(8px); margin: auto; min-height: 500px; }
+        h1 { font-size: 28px; margin-bottom: 25px; color: #fff; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 7px #00ffff, 0 0 15px #00ffff, 0 0 30px #00ffff, 0 0 45px #ff00ff; }
+        textarea { width: 100%; margin-bottom: 20px; border-radius: 8px; border: 2px solid #4a4a68; padding: 12px; font-size: 16px; font-family: inherit; resize: vertical; background-color: #1a1a2e; color: #e0e0e0; box-sizing: border-box; outline: none; transition: all 0.3s; }
+        textarea:focus { border-color: #00ffff; box-shadow: 0 0 10px #00ffff; }
+        button { background-color: transparent; border: 2px solid; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; margin: 5px; }
+        .tab-nav { display: flex; border-bottom: 2px solid #4a4a68; margin-bottom: 25px; }
+        .tab-nav button { border: none; border-bottom: 3px solid transparent; box-shadow: none; border-radius: 0; color: #aaa; padding-bottom: 15px; margin: 0 10px; }
+        .tab-nav button.active { color: #fff; border-bottom-color: #ff00ff; text-shadow: 0 0 5px #ff00ff; }
+        #brainstormer-panel { display: none; }
+        .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 12px; color: #aaa; }
         #google-login-btn { font-size: 16px; padding: 12px 24px; color: #4285F4; border-color: #4285F4; box-shadow: 0 0 5px #4285F4, 0 0 15px #4285F4; }
         #start-btn { color: #ff00ff; border-color: #ff00ff; box-shadow: 0 0 5px #ff00ff, 0 0 15px #ff00ff; }
         #brainstorm-btn { color: #34A853; border-color: #34A853; box-shadow: 0 0 5px #34A853, 0 0 15px #34A853; }
         #logout-btn { color: #EA4335; border-color: #EA4335; box-shadow: none; padding: 8px 12px; font-size: 12px; }
-
         #login-section { display: block; padding-top: 50px; }
         #main-app-section { display: none; }
         #ai-response { margin-top: 20px; text-align: left; background-color: #1a1a2e; padding: 15px; border-radius: 8px; white-space: pre-wrap; min-height: 100px; }
@@ -120,34 +30,23 @@
 
     <div class="container">
         <h1>Voice Note AI Assistant</h1>
-        
-        <!-- Login Section - Shown when logged out -->
         <div id="login-section">
             <p>Please log in to continue.</p>
             <button id="google-login-btn">Log In with Google</button>
         </div>
-
-        <!-- Main App Section - Shown when logged in -->
         <div id="main-app-section">
-            <!-- NEW: Header with user info and logout -->
             <div class="app-header">
                 <span id="user-info"></span>
                 <button id="logout-btn">Log Out</button>
             </div>
-            
-            <!-- NEW: Tab Navigation Buttons -->
             <div class="tab-nav">
                 <button id="voice-tab-btn" class="active">Voice Writer</button>
                 <button id="brainstorm-tab-btn">AI Brainstormer</button>
             </div>
-
-            <!-- Panel 1: Voice Writer (Visible by default) -->
             <div id="voice-writer-panel">
                 <textarea id="note-textarea" placeholder="Speak your notes here..." rows="10"></textarea>
                 <button id="start-btn">Start Listening</button>
             </div>
-
-            <!-- Panel 2: AI Brainstormer (Hidden by default) -->
             <div id="brainstormer-panel">
                 <textarea id="brainstorm-input" placeholder="Give the AI a topic, e.g., 'sustainable fashion' or 'a mobile app for gardeners'..." rows="4"></textarea>
                 <button id="brainstorm-btn">Ask Gemini for Ideas</button>
@@ -157,45 +56,29 @@
     </div>
 
     <script>
-        // --- YOUR ACTION REQUIRED: PASTE YOUR KEYS HERE! ---
+        // --- Paste your keys here! ---
         const SUPABASE_URL = 'https://dmwnttcisinyuprdizvh.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtd250dGNpc2lueXVwcmRpenZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2MDQxOTMsImV4cCI6MjA2NTE4MDE5M30.4X4cuJhCR8A6ep6-SHT3dUZxRtKu6C_sGJku1ooN2aM';
         const GEMINI_API_KEY = 'AIzaSyDA_bqi2X7kLKjV5oGsGVLA-R4E7p287s0';
-        // --- END OF ACTION ---
 
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Get all the HTML elements
         const loginSection = document.getElementById('login-section');
         const mainAppSection = document.getElementById('main-app-section');
         const googleLoginBtn = document.getElementById('google-login-btn');
         const logoutBtn = document.getElementById('logout-btn');
         const userInfoSpan = document.getElementById('user-info');
-
-        // --- NEW: Tab Elements ---
         const voiceTabBtn = document.getElementById('voice-tab-btn');
         const brainstormTabBtn = document.getElementById('brainstorm-tab-btn');
         const voiceWriterPanel = document.getElementById('voice-writer-panel');
         const brainstormerPanel = document.getElementById('brainstormer-panel');
 
-        // --- NEW: Tab Switching Logic ---
-        function showVoiceTab() {
-            voiceWriterPanel.style.display = 'block';
-            brainstormerPanel.style.display = 'none';
-            voiceTabBtn.classList.add('active');
- brainstormTabBtn.classList.remove('active');
-        }
-        function showBrainstormerTab() {
-            voiceWriterPanel.style.display = 'none';
-            brainstormerPanel.style.display = 'block';
-            voiceTabBtn.classList.remove('active');
-            brainstormTabBtn.classList.add('active');
-        }
+        function showVoiceTab() { voiceWriterPanel.style.display = 'block'; brainstormerPanel.style.display = 'none'; voiceTabBtn.classList.add('active'); brainstormTabBtn.classList.remove('active'); }
+        function showBrainstormerTab() { voiceWriterPanel.style.display = 'none'; brainstormerPanel.style.display = 'block'; voiceTabBtn.classList.remove('active'); brainstormTabBtn.classList.add('active'); }
         voiceTabBtn.onclick = showVoiceTab;
         brainstormTabBtn.onclick = showBrainstormerTab;
 
-        // --- Authentication Logic (with new user info update) ---
         googleLoginBtn.onclick = async () => { await _supabase.auth.signInWithOAuth({ provider: 'google' }); };
         logoutBtn.onclick = async () => { await _supabase.auth.signOut(); };
 
@@ -211,7 +94,6 @@
             }
         });
 
-        // --- Gemini AI Brainstorming Logic (Unchanged) ---
         const brainstormBtn = document.getElementById('brainstorm-btn');
         const brainstormInput = document.getElementById('brainstorm-input');
         const aiResponseDiv = document.getElementById('ai-response');
@@ -219,6 +101,9 @@
             aiResponseDiv.textContent = '🧠 Thinking of brilliant ideas...';
             const prompt = `You are a creative business consultant. A user wants business ideas based on the topic: "${topic}". Please provide 3-5 innovative and actionable business ideas. Format them clearly with bullet points.`;
             try {
+                // --- THIS IS THE LINE WE ARE FIXING ---
+                // OLD: /v1beta/models/gemini-pro:generateContent
+                // NEW: /v1beta/models/gemini-1.0-pro:generateContent
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -238,7 +123,6 @@
             if (topic) getAIResponse(topic); else alert('Please enter a topic for the AI to brainstorm!');
         };
         
-        // --- Voice Recognition Logic (Unchanged) ---
         const startBtn = document.getElementById('start-btn');
         const noteTextarea = document.getElementById('note-textarea');
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
