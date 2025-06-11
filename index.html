@@ -21,7 +21,6 @@
         #start-btn { color: #ff00ff; border-color: #ff00ff; }
         #brainstorm-btn { color: #34A853; border-color: #34A853; }
         #start-chat-btn { color: #fbbc05; border-color: #fbbc05; }
-        #activate-wake-word-btn { color: #00ffff; border-color: #00ffff; }
         #logout-btn { color: #EA4335; border-color: #EA4335; box-shadow: none; padding: 8px 12px; font-size: 12px; }
 
         #login-section { display: block; padding-top: 50px; }
@@ -70,7 +69,6 @@
             <div id="chatbot-panel">
                 <div id="chat-history"></div>
                 <button id="start-chat-btn">Start Conversation</button>
-                <button id="activate-wake-word-btn">Activate Wake Word</button>
                 <p id="chat-status">Ready to chat!</p>
                 <div class="voice-select-label">
                     AI Voice: <select id="voice-select"></select>
@@ -86,7 +84,7 @@
         const GEMINI_API_KEY = 'AIzaSyDA_bqi2X7kLKjV5oGsGVLA-R4E7p287s0';
         
         // --- GLOBAL SETUP & ELEMENT GETTING ---
-        const { createClient } = supabase; const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY); const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; const synthesis = window.speechSynthesis; const el = { loginSection: document.getElementById('login-section'), mainAppSection: document.getElementById('main-app-section'), googleLoginBtn: document.getElementById('google-login-btn'), logoutBtn: document.getElementById('logout-btn'), userInfo: document.getElementById('user-info'), voiceTabBtn: document.getElementById('voice-tab-btn'), brainstormTabBtn: document.getElementById('brainstorm-tab-btn'), chatbotTabBtn: document.getElementById('chatbot-tab-btn'), voiceWriterPanel: document.getElementById('voice-writer-panel'), brainstormerPanel: document.getElementById('brainstormer-panel'), chatbotPanel: document.getElementById('chatbot-panel'), startChatBtn: document.getElementById('start-chat-btn'), chatHistory: document.getElementById('chat-history'), chatStatus: document.getElementById('chat-status'), startBtn: document.getElementById('start-btn'), noteTextarea: document.getElementById('note-textarea'), brainstormBtn: document.getElementById('brainstorm-btn'), brainstormInput: document.getElementById('brainstorm-input'), aiResponseDiv: document.getElementById('ai-response'), activateWakeWordBtn: document.getElementById('activate-wake-word-btn'), voiceSelect: document.getElementById('voice-select') };
+        const { createClient } = supabase; const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY); const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; const synthesis = window.speechSynthesis; const el = { loginSection: document.getElementById('login-section'), mainAppSection: document.getElementById('main-app-section'), googleLoginBtn: document.getElementById('google-login-btn'), logoutBtn: document.getElementById('logout-btn'), userInfo: document.getElementById('user-info'), voiceTabBtn: document.getElementById('voice-tab-btn'), brainstormTabBtn: document.getElementById('brainstorm-tab-btn'), chatbotTabBtn: document.getElementById('chatbot-tab-btn'), voiceWriterPanel: document.getElementById('voice-writer-panel'), brainstormerPanel: document.getElementById('brainstormer-panel'), chatbotPanel: document.getElementById('chatbot-panel'), startChatBtn: document.getElementById('start-chat-btn'), chatHistory: document.getElementById('chat-history'), chatStatus: document.getElementById('chat-status'), startBtn: document.getElementById('start-btn'), noteTextarea: document.getElementById('note-textarea'), brainstormBtn: document.getElementById('brainstorm-btn'), brainstormInput: document.getElementById('brainstorm-input'), aiResponseDiv: document.getElementById('ai-response'), voiceSelect: document.getElementById('voice-select') };
         function showTab(panelToShow, btnToActivate) { [el.voiceWriterPanel, el.brainstormerPanel, el.chatbotPanel].forEach(p => p.style.display = 'none'); [el.voiceTabBtn, el.brainstormTabBtn, el.chatbotTabBtn].forEach(b => b.classList.remove('active')); panelToShow.style.display = 'block'; btnToActivate.classList.add('active'); }
         el.voiceTabBtn.onclick = () => showTab(el.voiceWriterPanel, el.voiceTabBtn); el.brainstormTabBtn.onclick = () => showTab(el.brainstormerPanel, el.brainstormTabBtn); el.chatbotTabBtn.onclick = () => showTab(el.chatbotPanel, el.chatbotTabBtn);
         el.googleLoginBtn.onclick = async () => await _supabase.auth.signInWithOAuth({ provider: 'google' }); el.logoutBtn.onclick = async () => await _supabase.auth.signOut();
@@ -96,23 +94,12 @@
         if (SpeechRecognition) { const writerRecognition = new SpeechRecognition(); writerRecognition.continuous = true; writerRecognition.interimResults = true; let isWriterListening = false; let writerFinalTranscript = ''; writerRecognition.onstart = () => { isWriterListening = true; el.startBtn.textContent = 'Stop Listening'; writerFinalTranscript = el.noteTextarea.value; }; writerRecognition.onend = () => { isWriterListening = false; el.startBtn.textContent = 'Start Listening'; }; writerRecognition.onresult = (event) => { let interim = ''; for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) { writerFinalTranscript += event.results[i][0].transcript + ' '; } else { interim += event.results[i][0].transcript; } } el.noteTextarea.value = writerFinalTranscript + interim; }; el.startBtn.onclick = () => { if (isWriterListening) { writerRecognition.stop(); } else { writerRecognition.start(); } }; }
 
         // --- TAB 2: BRAINSTORMER LOGIC ---
-        async function getAIResponse(topic) { el.aiResponseDiv.textContent = '🧠 Thinking...'; const prompt = `You are a creative AI assistant. Brainstorm 3 interesting and unique ideas based on this topic: "${topic}". Keep the tone enthusiastic and the format easy to read.`; try { const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "contents": [{ "parts": [{ "text": prompt }] }] }) }); if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`); const data = await response.json(); el.aiResponseDiv.textContent = data.candidates[0].content.parts[0].text; } catch (error) { console.error("Error:", error); el.aiResponseDiv.textContent = 'AI Error. Check API key and billing.'; } }
+        async function getAIResponse(topic) { el.aiResponseDiv.textContent = '🧠 Thinking...'; const prompt = `As a creative AI assistant, brainstorm 3 interesting and unique ideas based on this topic: "${topic}". Keep the tone enthusiastic and the format easy to read.`; try { const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "contents": [{ "parts": [{ "text": prompt }] }] }) }); if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`); const data = await response.json(); el.aiResponseDiv.textContent = data.candidates[0].content.parts[0].text; } catch (error) { console.error("Error:", error); el.aiResponseDiv.textContent = 'AI Error. Check API key and billing.'; } }
         el.brainstormBtn.onclick = () => { const topic = el.brainstormInput.value; if (topic) getAIResponse(topic); else alert('Please enter a topic!'); };
 
-        // --- TAB 3: LIVE CHATBOT LOGIC (UPGRADED!) ---
+        // --- TAB 3: LIVE CHATBOT LOGIC (FINAL, DEBUGGED VERSION) ---
         let chatHistory = []; let isChatting = false; let voices = [];
-        
-        // --- NEW SYSTEM PROMPT: This gives the AI its personality and rules ---
-        const systemPrompt = {
-            role: 'user',
-            parts: [{ text: `You are Gemi, a friendly and extremely creative AI brainstorming partner. Your goal is to have a natural, human-like conversation.
-            RULES:
-            1. Keep your responses short and conversational (usually 1-3 sentences).
-            2. NEVER respond with a list unless the user explicitly asks for one.
-            3. Acknowledge what the user said.
-            4. ALWAYS end your response with an open-ended question to keep the conversation flowing and encourage the user to think more deeply.
-            Start the first conversation by saying: "Hello! I'm Gemi, your creative partner. What's on your mind today?"` }]
-        };
+        const systemPrompt = { role: 'user', parts: [{ text: `You are Gemi, a friendly and extremely creative AI brainstorming partner. Your goal is to have a natural, human-like conversation. RULES: 1. Keep your responses short and conversational (usually 1-3 sentences). 2. NEVER respond with a list. 3. ALWAYS end your response with an open-ended question to keep the conversation flowing.` }] };
 
         function populateVoiceList() { voices = synthesis.getVoices(); el.voiceSelect.innerHTML = ''; voices.filter(v => v.lang.startsWith('en')).forEach(voice => { const option = document.createElement('option'); option.textContent = `${voice.name} (${voice.lang})`; option.setAttribute('data-name', voice.name); el.voiceSelect.appendChild(option); }); }
         if (synthesis.onvoiceschanged !== undefined) { synthesis.onvoiceschanged = populateVoiceList; } else { populateVoiceList(); }
@@ -124,25 +111,55 @@
         async function sendToGeminiForChat() {
             el.chatStatus.textContent = "AI is thinking...";
             try {
-                // We add the system prompt at the beginning of every API call
                 const apiHistory = [systemPrompt, ...chatHistory];
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "contents": apiHistory }) });
                 const data = await response.json();
                 const aiText = data.candidates[0].content.parts[0].text;
                 addToChatHistory('ai', aiText);
                 chatHistory.push({ role: 'model', parts: [{ text: aiText }] });
-                speakText(aiText, () => { if (isChatting) { el.chatStatus.textContent = "Your turn. I'm listening..."; chatRecognition.start(); } });
+                speakText(aiText, () => { if (isChatting) { el.chatStatus.textContent = "Your turn. I'm listening..."; chatRecognition.start(); } }); // <-- BUG FIX: Restart listening here
             } catch (error) { el.chatStatus.textContent = "Error. Ending chat."; console.error(error); isChatting = false; el.startChatBtn.textContent = "Start Conversation"; }
         }
         
         if (SpeechRecognition) {
             const chatRecognition = new SpeechRecognition(); chatRecognition.continuous = false;
-            chatRecognition.onresult = (event) => { const userText = event.results[0][0].transcript; addToChatHistory('user', userText); chatHistory.push({ role: 'user', parts: [{ text: userText }] }); sendToGeminiForChat(); };
-            el.startChatBtn.onclick = () => { if (isChatting) { isChatting = false; chatRecognition.stop(); synthesis.cancel(); el.chatStatus.textContent = "Conversation ended."; el.startChatBtn.textContent = "Start Conversation"; } else { isChatting = true; el.startChatBtn.textContent = "End Conversation"; el.chatStatus.textContent = "I'm listening..."; el.chatHistory.innerHTML = ''; chatHistory = []; const firstAIResponse = "Hello! I'm Gemi, your creative partner. What's on your mind today?"; addToChatHistory('ai', firstAIResponse); speakText(firstAIResponse, () => { if (isChatting) { el.chatStatus.textContent = "Your turn. I'm listening..."; chatRecognition.start(); } }); } };
             
-            const wakeWordRecognition = new SpeechRecognition(); wakeWordRecognition.continuous = true; let isWakeWordActive = false;
-            wakeWordRecognition.onresult = (event) => { for (let i = event.resultIndex; i < event.results.length; ++i) { const transcript = event.results[i][0].transcript.toLowerCase().trim(); if (transcript.includes('hello gemi') || transcript.includes('hi gemi')) { el.chatStatus.textContent = "Wake word detected! Starting chat..."; wakeWordRecognition.stop(); isWakeWordActive = false; el.activateWakeWordBtn.style.borderColor = '#00ffff'; el.startChatBtn.click(); break; } } };
-            el.activateWakeWordBtn.onclick = () => { if(isWakeWordActive) { isWakeWordActive = false; wakeWordRecognition.stop(); el.chatStatus.textContent = "Wake word deactivated."; el.activateWakeWordBtn.style.borderColor = '#00ffff'; } else { isWakeWordActive = true; wakeWordRecognition.start(); el.chatStatus.textContent = "Wake word activated. Say 'Hello Gemi' to start."; el.activateWakeWordBtn.style.borderColor = '#fbbc05'; } }
+            chatRecognition.onresult = (event) => {
+                const userText = event.results[0][0].transcript;
+                addToChatHistory('user', userText);
+                chatHistory.push({ role: 'user', parts: [{ text: userText }] });
+                sendToGeminiForChat();
+            };
+
+            // BUG FIX: Add an 'onend' event to handle cases where the user stops talking
+            chatRecognition.onend = () => {
+                if(isChatting) {
+                    // If the chat is supposed to be active but recognition stopped (e.g., silence), restart it.
+                    el.chatStatus.textContent = "I'm still listening...";
+                    chatRecognition.start();
+                }
+            };
+            
+            el.startChatBtn.onclick = () => {
+                if (isChatting) {
+                    isChatting = false;
+                    chatRecognition.stop();
+                    synthesis.cancel();
+                    el.chatStatus.textContent = "Conversation ended.";
+                    el.startChatBtn.textContent = "Start Conversation";
+                } else {
+                    isChatting = true;
+                    el.startChatBtn.textContent = "End Conversation";
+                    el.chatStatus.textContent = "Starting...";
+                    el.chatHistory.innerHTML = ''; chatHistory = [];
+                    const firstAIResponse = "Hello! I'm Gemi, your creative partner. What's on your mind today?";
+                    addToChatHistory('ai', firstAIResponse);
+                    speakText(firstAIResponse, () => {
+                        el.chatStatus.textContent = "Your turn. I'm listening...";
+                        chatRecognition.start();
+                    });
+                }
+            };
         }
     </script>
 </body>
