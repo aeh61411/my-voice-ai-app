@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtd250dGNpc2lueXVwcmRpenZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2MDQxOTMsImV4cCI6MjA2NTE4MDE5M30.4X4cuJhCR8A6ep6-SHT3dUZxRtKu6C_sGJku1ooN2aM';
     const GEMINI_API_KEY = 'AIzaSyDA_bqi2X7kLKjV5oGsGVLA-R4E7p287s0';
 
-    // ALL of our code now lives inside here.
+    // ALL of our code now lives inside here. This ensures elements exist before we use them.
     const { createClient } = supabase;
     const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -20,9 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
         tabs: [
             { btn: document.getElementById('voice-tab-btn'), panel: document.getElementById('voice-writer-panel') },
             { btn: document.getElementById('brainstorm-tab-btn'), panel: document.getElementById('brainstormer-panel') },
-            { btn: document.getElementById('chatbot-tab-btn'), panel: document.getElementById('chatbot-panel') },
-            { btn: document.getElementById('profile-tab-btn'), panel: document.getElementById('profile-panel') }
+            { btn: document.getElementById('chatbot-tab-btn'), panel: document.getElementById('chatbot-panel') }
         ],
+        profileTabBtn: document.getElementById('profile-tab-btn'), // Get these separately
+        profilePanel: document.getElementById('profile-panel'),
+        
         startBtn: document.getElementById('start-btn'), noteTextarea: document.getElementById('note-textarea'),
         brainstormBtn: document.getElementById('brainstorm-btn'), brainstormInput: document.getElementById('brainstorm-input'), aiResponseDiv: document.getElementById('ai-response'),
         startChatBtn: document.getElementById('start-chat-btn'), chatHistoryDiv: document.getElementById('chat-history'), chatStatus: document.getElementById('chat-status'), voiceSelect: document.getElementById('voice-select'),
@@ -31,21 +33,38 @@ document.addEventListener('DOMContentLoaded', () => {
         profileAvatarPreview: document.getElementById('profile-avatar-preview')
     };
 
-    function showTab(panelToShow) { el.tabs.forEach(tab => { tab.panel.classList.remove('active-panel'); tab.btn.classList.remove('active'); }); const activeTab = el.tabs.find(tab => tab.panel === panelToShow); if (activeTab) { activeTab.panel.classList.add('active-panel'); activeTab.btn.classList.add('active'); } }
-    el.tabs.forEach(tab => { if (tab.btn.id !== 'logout-btn' && tab.btn.id !== 'profile-tab-btn') { tab.btn.onclick = () => showTab(tab.panel); }});
-    el.profileTabBtn.onclick = () => showTab(el.profilePanel);
+    function showTab(panelToShow, btnToActivate) {
+        // Hide all main panels and deactivate all main tab buttons
+        el.tabs.forEach(tab => { tab.panel.style.display = 'none'; tab.btn.classList.remove('active'); });
+        // Also hide the profile panel
+        el.profilePanel.style.display = 'none';
+        
+        panelToShow.style.display = 'block';
+        if (btnToActivate) { btnToActivate.classList.add('active'); }
+    }
+
+    // Setup click handlers for the main content tabs
+    el.tabs.forEach(tab => { tab.btn.onclick = () => showTab(tab.panel, tab.btn); });
+    
+    // Setup click handlers for header buttons
+    el.profileTabBtn.onclick = () => {
+        // When profile is clicked, deactivate all main tabs
+        el.tabs.forEach(tab => tab.btn.classList.remove('active'));
+        showTab(el.profilePanel, null); // Show profile panel, no button to activate in the main nav
+    };
+    
     el.googleLoginBtn.onclick = async () => await _supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
     el.logoutBtn.onclick = async () => { await _supabase.auth.signOut(); currentUser = null; };
 
     _supabase.auth.onAuthStateChange(async (_event, session) => { if (session) { el.loginSection.style.display = 'none'; el.mainAppSection.style.display = 'block'; currentUser = session.user; await loadUserProfile(); } else { el.loginSection.style.display = 'block'; el.mainAppSection.style.display = 'none'; } });
-
+    
     async function loadUserProfile() { if (!currentUser) return; const { data, error } = await _supabase.from('profiles').select('username, avatar_url').eq('id', currentUser.id).single(); if (error && error.code !== 'PGRST116') console.error('Error loading profile:', error); const username = data?.username || currentUser.email.split('@')[0]; const avatarUrl = data?.avatar_url || 'https://i.imgur.com/6b6psVE.png'; el.userInfo.textContent = username; el.headerAvatar.src = avatarUrl; el.profileAvatarPreview.src = avatarUrl; el.usernameInput.value = username; }
     el.uploadAvatarBtn.onclick = () => el.avatarUploadInput.click();
     el.avatarUploadInput.onchange = async () => { if (!currentUser || !el.avatarUploadInput.files || el.avatarUploadInput.files.length === 0) return; const file = el.avatarUploadInput.files[0]; const filePath = `${currentUser.id}/${Date.now()}_${file.name}`; el.saveProfileBtn.textContent = 'UPLOADING...'; const { error: uploadError } = await _supabase.storage.from('avatars').upload(filePath, file, { upsert: true }); if (uploadError) { alert('Error uploading picture!'); console.error(uploadError); el.saveProfileBtn.textContent = 'SAVE PROFILE'; return; } const { data: { publicUrl } } = _supabase.storage.from('avatars').getPublicUrl(filePath); await _supabase.from('profiles').upsert({ id: currentUser.id, avatar_url: publicUrl }); alert('Picture updated!'); await loadUserProfile(); el.saveProfileBtn.textContent = 'SAVE PROFILE'; };
     el.saveProfileBtn.onclick = async () => { if (!currentUser) return; const newUsername = el.usernameInput.value; el.saveProfileBtn.textContent = 'SAVING...'; const { error: updateError } = await _supabase.from('profiles').upsert({ id: currentUser.id, username: newUsername }); if (updateError) { alert('Error saving username!'); console.error(updateError); } else { alert('Username saved!'); await loadUserProfile(); } el.saveProfileBtn.textContent = 'SAVE PROFILE'; };
 
     if (SpeechRecognition) { const writerRecognition = new SpeechRecognition(); writerRecognition.continuous = true; writerRecognition.interimResults = true; let isWriterListening = false; let finalTranscript = ''; writerRecognition.onstart = () => { isWriterListening = true; el.startBtn.textContent = 'Stop Scribing'; finalTranscript = el.noteTextarea.value; }; writerRecognition.onend = () => { isWriterListening = false; el.startBtn.textContent = 'Start Scribing'; }; writerRecognition.onresult = (event) => { let interim = ''; for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) { finalTranscript += event.results[i][0].transcript + ' '; } else { interim += event.results[i][0].transcript; } } el.noteTextarea.value = finalTranscript + interim; }; el.startBtn.onclick = () => { if (isWriterListening) { writerRecognition.stop(); } else { writerRecognition.start(); } }; }
-
+    
     el.brainstormBtn.onclick = async () => { const topic = el.brainstormInput.value; if (!topic) { alert('Please enter a topic!'); return; } el.aiResponseDiv.textContent = '🧠 Generating innovative ideas...'; const prompt = `You are an expert business and product strategist. A user wants innovative ideas for the topic: "${topic}". Provide 3 distinct and actionable ideas. For each idea, provide a catchy name, a one-sentence summary, and 2-3 key features. Format the output clearly using markdown for bolding and bullet points. Your tone should be creative and professional.`; try { const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "contents": [{ "parts": [{ "text": prompt }] }] }) }); if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`); const data = await response.json(); el.aiResponseDiv.textContent = data.candidates[0].content.parts[0].text; } catch (error) { console.error("Error:", error); el.aiResponseDiv.textContent = 'AI Error. Check API key and billing.'; } };
 
     let chatHistory = []; let isChatting = false; let voices = [];
@@ -57,4 +76,4 @@ document.addEventListener('DOMContentLoaded', () => {
     async function sendToGeminiForChat() { el.chatStatus.textContent = "AI is thinking..."; try { const apiHistory = [systemPrompt, ...chatHistory]; const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "contents": apiHistory }) }); if (!response.ok) throw new Error(); const data = await response.json(); const aiText = data.candidates[0].content.parts[0].text; addToChatHistory('ai', aiText); chatHistory.push({ role: 'model', parts: [{ text: aiText }] }); speakText(aiText, () => { if (isChatting) { el.chatStatus.textContent = "Your turn. I'm listening..."; if(chatRecognition) chatRecognition.start(); } }); } catch (error) { el.chatStatus.textContent = "Error. Ending chat."; console.error(error); isChatting = false; el.startChatBtn.textContent = "Start Conversation"; } }
     if (SpeechRecognition) { const chatRecognition = new SpeechRecognition(); chatRecognition.continuous = false; chatRecognition.onresult = (event) => { const userText = event.results[0][0].transcript; addToChatHistory('user', userText); chatHistory.push({ role: 'user', parts: [{ text: userText }] }); sendToGeminiForChat(); }; el.startChatBtn.onclick = () => { if (isChatting) { isChatting = false; chatRecognition.stop(); synthesis.cancel(); el.chatStatus.textContent = "Conversation ended."; el.startChatBtn.textContent = "Start Conversation"; } else { isChatting = true; el.startChatBtn.textContent = "End Conversation"; el.chatStatus.textContent = "Starting..."; el.chatHistoryDiv.innerHTML = ''; chatHistory = []; const firstAIResponse = "Hello! I'm Gemi, your creative partner. What can I help you brainstorm today?"; addToChatHistory('ai', firstAIResponse); speakText(firstAIResponse, () => { el.chatStatus.textContent = "Your turn. I'm listening..."; chatRecognition.start(); }); } }; }
 
-}); // This closes the DOMContentLoaded listener
+}); // This closes the new DOMContentLoaded listener
