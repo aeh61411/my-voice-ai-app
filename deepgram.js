@@ -3,26 +3,22 @@ import { createClient } from "@deepgram/sdk";
 
 export default async function handler(request, response) {
     const deepgramApiKey = process.env.DEEPGRAM_API_KEY;
-    if (!deepgramApiKey) {
-        return response.status(500).json({ error: "Deepgram API key not configured." });
-    }
 
+    // Create a new Deepgram client
     const deepgram = createClient(deepgramApiKey);
 
     try {
+        // We create a temporary key that is only valid for a few minutes
         const { result: newKey, error } = await deepgram.keys.create(
-            "ScribeAI Temporary Key", // A name for the key
-            ["member"], // Permissions
-            { timeToLiveInSeconds: 60 } // Key is only valid for 60 seconds
+            "ScribeAI Temporary Key",
+            ["member"],
+            { timeToLiveInSeconds: 60 * 2 } // Key is valid for 2 minutes
         );
-
-        if (error) {
-            throw error;
-        }
-
-        response.status(200).json(newKey);
+        if (error) throw error;
+        // Send the temporary key back to the client
+        return response.status(200).json(newKey);
     } catch (error) {
         console.error("Deepgram key creation error:", error);
-        response.status(500).json({ error: "Failed to generate temporary key." });
+        return response.status(500).json({ error: "Failed to get temporary transcription key." });
     }
 }
