@@ -4,151 +4,147 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Voice Note AI Assistant</title>
+    <!-- We are adding the Supabase library here -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* NEW NEON STYLES! */
-        body {
-            font-family: 'Consolas', 'Courier New', monospace;
-            background-color: #0c0c14; /* Very dark blue, almost black */
-            color: #e0e0e0; /* Light grey text */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
-        }
-
-        .container {
-            background-color: rgba(26, 26, 46, 0.5); /* Semi-transparent dark container */
-            padding: 40px;
-            border-radius: 12px;
-            border: 2px solid #333;
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.2); /* Subtle cyan glow */
-            text-align: center;
-            width: 90%;
-            max-width: 600px;
-            backdrop-filter: blur(5px);
-        }
-
-        h1 {
-            font-size: 28px;
-            margin-bottom: 20px;
-            color: #fff;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            /* This is the magic for the neon text glow! */
-            text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 20px #00ffff;
-        }
-
-        #note-textarea {
-            width: 100%;
-            height: 200px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            border: 2px solid #4a4a68;
-            padding: 12px;
-            font-size: 16px;
-            font-family: 'Consolas', 'Courier New', monospace;
-            resize: vertical;
-            background-color: #1a1a2e; /* Dark terminal background */
-            color: #e0e0e0;
-            box-sizing: border-box; /* Important for padding and border */
-            outline: none; /* Removes the default browser outline */
-            transition: border-color 0.3s, box-shadow 0.3s;
-        }
-
-        #note-textarea:focus {
-            border-color: #00ffff; /* Bright cyan border when you click on it */
-            box-shadow: 0 0 10px #00ffff;
-        }
-
-        button#start-btn {
-            background-color: transparent;
-            color: #ff00ff; /* Bright magenta color */
-            border: 2px solid #ff00ff;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            /* The magic for the button glow! */
-            box-shadow: 0 0 5px #ff00ff, 0 0 15px #ff00ff, 0 0 30px #ff00ff, 0 0 60px #ff00ff;
-        }
-
-        button#start-btn:hover {
-            background-color: rgba(255, 0, 255, 0.1);
-            color: #fff;
-            text-shadow: 0 0 8px #ff00ff;
-        }
-        
-        #status {
-            margin-top: 15px;
-            font-style: italic;
-            color: #888;
-            transition: color 0.3s;
-        }
+        body { font-family: 'Consolas', 'Courier New', monospace; background-color: #0c0c14; color: #e0e0e0; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
+        .container { background-color: rgba(26, 26, 46, 0.5); padding: 40px; border-radius: 12px; border: 2px solid #333; box-shadow: 0 0 15px rgba(0, 255, 255, 0.2); text-align: center; width: 90%; max-width: 600px; backdrop-filter: blur(5px); }
+        h1 { font-size: 28px; margin-bottom: 20px; color: #fff; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 20px #00ffff; }
+        textarea { width: 100%; margin-bottom: 20px; border-radius: 8px; border: 2px solid #4a4a68; padding: 12px; font-size: 16px; font-family: 'Consolas', 'Courier New', monospace; resize: vertical; background-color: #1a1a2e; color: #e0e0e0; box-sizing: border-box; outline: none; transition: border-color 0.3s, box-shadow 0.3s; }
+        textarea:focus { border-color: #00ffff; box-shadow: 0 0 10px #00ffff; }
+        button { background-color: transparent; border: 2px solid; padding: 12px 24px; border-radius: 8px; font-size: 16px; font-weight: bold; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; margin-top: 10px; }
+        #google-login-btn { color: #4285F4; border-color: #4285F4; box-shadow: 0 0 5px #4285F4, 0 0 15px #4285F4; }
+        #start-btn { color: #ff00ff; border-color: #ff00ff; box-shadow: 0 0 5px #ff00ff, 0 0 15px #ff00ff; }
+        #brainstorm-btn { color: #34A853; border-color: #34A853; box-shadow: 0 0 5px #34A853, 0 0 15px #34A853; }
+        #logout-btn { color: #EA4335; border-color: #EA4335; box-shadow: 0 0 5px #EA4335, 0 0 15px #EA4335; }
+        #login-section { display: block; }
+        #main-app-section { display: none; }
+        #brainstorm-panel { margin-top: 30px; padding-top: 20px; border-top: 1px solid #4a4a68; }
+        #ai-response { margin-top: 20px; text-align: left; background-color: #1a1a2e; padding: 15px; border-radius: 8px; white-space: pre-wrap; /* This keeps the formatting from the AI */ }
     </style>
 </head>
 <body>
 
     <div class="container">
         <h1>Voice Note AI Assistant</h1>
-        <textarea id="note-textarea" placeholder="Click the glowing button and speak..."></textarea>
-        <button id="start-btn">Start Listening</button>
-        <p id="status">Status: Idle</p>
+        
+        <!-- Login Section - Shown when logged out -->
+        <div id="login-section">
+            <p>Please log in to continue.</p>
+            <button id="google-login-btn">Log In with Google</button>
+        </div>
+
+        <!-- Main App Section - Shown when logged in -->
+        <div id="main-app-section">
+            <textarea id="note-textarea" placeholder="Speak your notes here..." rows="8"></textarea>
+            <button id="start-btn">Start Listening</button>
+            <hr style="border-color: #4a4a68; margin: 30px 0;">
+
+            <!-- AI Brainstorming Panel -->
+            <h2>AI Business Idea Brainstormer</h2>
+            <textarea id="brainstorm-input" placeholder="Give the AI a topic, e.g., 'sustainable fashion' or 'pet accessories'..." rows="3"></textarea>
+            <button id="brainstorm-btn">Ask Gemini for Ideas</button>
+            <div id="ai-response">AI ideas will appear here...</div>
+
+            <button id="logout-btn">Log Out</button>
+        </div>
     </div>
 
     <script>
-        // THIS JAVASCRIPT IS EXACTLY THE SAME - NO CHANGES NEEDED!
+        // --- YOUR ACTION REQUIRED: PASTE YOUR KEYS HERE! ---
+        const SUPABASE_URL = 'https://dmwnttcisinyuprdizvh.supabase.co'; // Find this in your Supabase project settings > API
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtd250dGNpc2lueXVwcmRpenZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2MDQxOTMsImV4cCI6MjA2NTE4MDE5M30.4X4cuJhCR8A6ep6-SHT3dUZxRtKu6C_sGJku1ooN2aM'; // Also in Supabase project settings > API
+        const GEMINI_API_KEY = 'AIzaSyDA_bqi2X7kLKjV5oGsGVLA-R4E7p287s0'; // The key you got from Google AI Studio
+        // --- END OF ACTION ---
+
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Get all the HTML elements we need
+        const loginSection = document.getElementById('login-section');
+        const mainAppSection = document.getElementById('main-app-section');
+        const googleLoginBtn = document.getElementById('google-login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const brainstormBtn = document.getElementById('brainstorm-btn');
+        const brainstormInput = document.getElementById('brainstorm-input');
+        const aiResponseDiv = document.getElementById('ai-response');
+        
+        // --- Authentication Logic ---
+        async function handleGoogleLogin() {
+            const { error } = await _supabase.auth.signInWithOAuth({ provider: 'google' });
+            if (error) console.error('Error logging in:', error);
+        }
+
+        async function handleLogout() {
+            const { error } = await _supabase.auth.signOut();
+            if (error) console.error('Error logging out:', error);
+        }
+
+        googleLoginBtn.onclick = handleGoogleLogin;
+        logoutBtn.onclick = handleLogout;
+
+        // --- Session Management Logic ---
+        _supabase.auth.onAuthStateChange((_event, session) => {
+            if (session) { // User is logged in
+                loginSection.style.display = 'none';
+                mainAppSection.style.display = 'block';
+            } else { // User is logged out
+                loginSection.style.display = 'block';
+                mainAppSection.style.display = 'none';
+            }
+        });
+
+        // --- Gemini AI Brainstorming Logic ---
+        async function getAIResponse(topic) {
+            aiResponseDiv.textContent = '🧠 Thinking of brilliant ideas...';
+            const prompt = `You are a creative business consultant. A user wants business ideas based on the topic: "${topic}". Please provide 3-5 innovative and actionable business ideas. Format them clearly with bullet points.`;
+            
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ "contents": [{ "parts": [{ "text": prompt }] }] })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const aiText = data.candidates[0].content.parts[0].text;
+                aiResponseDiv.textContent = aiText;
+
+            } catch (error) {
+                console.error("Error with Gemini API:", error);
+                aiResponseDiv.textContent = 'Sorry, the AI is taking a nap. Please check the console for errors and make sure your API key is correct.';
+            }
+        }
+
+        brainstormBtn.onclick = () => {
+            const topic = brainstormInput.value;
+            if (topic) {
+                getAIResponse(topic);
+            } else {
+                alert('Please enter a topic for the AI to brainstorm!');
+            }
+        };
+
+        // --- Voice Recognition Logic (No changes needed here) ---
         const startBtn = document.getElementById('start-btn');
         const noteTextarea = document.getElementById('note-textarea');
-        const statusDiv = document.getElementById('status');
-
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            alert("Sorry, your browser doesn't support Speech Recognition. Please try Google Chrome.");
-        } else {
+        if (SpeechRecognition) {
             const recognition = new SpeechRecognition();
             recognition.continuous = true;
             recognition.interimResults = true;
-
             let isListening = false;
             let finalTranscript = '';
-
-            recognition.onstart = () => {
-                isListening = true;
-                statusDiv.textContent = 'Status: Listening...';
-                startBtn.textContent = 'Stop Listening';
-                finalTranscript = noteTextarea.value; 
-            };
-
-            recognition.onend = () => {
-                isListening = false;
-                statusDiv.textContent = 'Status: Idle';
-                startBtn.textContent = 'Start Listening';
-            };
-
-            recognition.onresult = (event) => {
-                let interimTranscript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        finalTranscript += event.results[i][0].transcript + ' ';
-                    } else {
-                        interimTranscript += event.results[i][0].transcript;
-                    }
-                }
-                noteTextarea.value = finalTranscript + interimTranscript;
-            };
-
-            startBtn.addEventListener('click', () => {
-                if (isListening) {
-                    recognition.stop();
-                } else {
-                    recognition.start();
-                }
-            });
+            recognition.onstart = () => { isListening = true; startBtn.textContent = 'Stop Listening'; finalTranscript = noteTextarea.value; };
+            recognition.onend = () => { isListening = false; startBtn.textContent = 'Start Listening'; };
+            recognition.onresult = (event) => { let interim = ''; for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) { finalTranscript += event.results[i][0].transcript + ' '; } else { interim += event.results[i][0].transcript; } } noteTextarea.value = finalTranscript + interim; };
+            startBtn.onclick = () => { if (isListening) { recognition.stop(); } else { recognition.start(); } };
+        } else {
+            alert("Sorry, your browser doesn't support Speech Recognition. Try Google Chrome.");
         }
     </script>
 
