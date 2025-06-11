@@ -3,64 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeuraNote - AI Voice Assistant</title>
+    <title>ScribeAI - Your Intelligent Writing Partner</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <h1>NeuraNote</h1>
-        <div id="login-section">
-            <p>Your AI-Powered Second Brain. Please log in.</p>
-            <button id="google-login-btn">Log In with Google</button>
-        </div>
-        <div id="main-app-section">
-            <div class="app-header">
-                <div class="user-profile-header">
-                    <img id="header-avatar" src="" alt="Avatar" class="header-avatar">
-                    <span id="user-info"></span>
-                </div>
-                <div>
-                    <button class="tab-btn" data-target="profile-panel">Profile</button>
-                    <button id="logout-btn">Log Out</button>
-                </div>
-            </div>
-            
-            <div id="notification-area" class="notification"></div>
+    <!-- SVG Icons Definition -->
+    <svg width="0" height="0" style="position:absolute">
+        <defs>
+            <symbol id="icon-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line></symbol>
+            <symbol id="icon-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></symbol>
+            <symbol id="icon-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></symbol>
+            <symbol id="icon-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></symbol>
+            <symbol id="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></symbol>
+            <symbol id="icon-delete" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></symbol>
+            <symbol id="icon-refine" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.41 1.41L16.17 10H4v4h12.17l-5.58 5.59L12 21l8-8-8-8z"></path></symbol>
+        </defs>
+    </svg>
 
-            <div class="tab-nav">
-                <button class="tab-btn active" data-target="voice-writer-panel">Scribe Mode</button>
-                <button class="tab-btn" data-target="brainstormer-panel">Idea Spark</button>
-                <button class="tab-btn" data-target="chatbot-panel">AI Co-Pilot</button>
-            </div>
-            
-            <div id="voice-writer-panel" class="tab-panel active-panel">
-                <textarea id="note-textarea" placeholder="Speak your notes here..." rows="10"></textarea>
-                <button id="start-btn">Start Scribing</button>
-            </div>
-            <div id="brainstormer-panel" class="tab-panel">
-                <textarea id="brainstorm-input" placeholder="Enter a topic for the AI to brainstorm..." rows="4"></textarea>
-                <button id="brainstorm-btn">Generate Ideas</button>
-                <div id="ai-response"></div>
-            </div>
-            <div id="chatbot-panel" class="tab-panel">
-                <div id="chat-history"></div>
-                <button id="start-chat-btn">Start Conversation</button>
-                <p id="chat-status">Ready to chat!</p>
-                <div class="voice-select-label">AI Voice: <select id="voice-select"></select></div>
-            </div>
-            <div id="profile-panel" class="tab-panel">
-                <h2>Edit Your Profile</h2>
-                <img id="profile-avatar-preview" src="" alt="Profile Preview" class="profile-avatar">
-                <input type="file" id="avatar-upload-input" accept="image/*" style="display: none;">
-                <button id="upload-avatar-btn">Upload New Picture</button>
-                <input type="text" id="username-input" placeholder="Enter your new username">
-                <button id="save-profile-btn">Save Profile</button>
-            </div>
-        </div>
+    <div id="login-section" class="auth-container">
+        <h1>ScribeAI</h1>
+        <p>Your Intelligent Writing Partner. Log in to begin.</p>
+        <button id="google-login-btn" class="primary-btn">Log In with Google</button>
     </div>
-    <!-- This library helps display the AI's formatted response correctly -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <div id="app-container" style="display: none;">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>My Notes</h2>
+                <button id="new-note-btn" class="icon-btn" title="New Note"><svg><use xlink:href="#icon-plus"></use></svg></button>
+            </div>
+            <div id="note-list" class="note-list-container">
+                <!-- Notes will be loaded here by JavaScript -->
+            </div>
+            <div class="sidebar-footer">
+                <img id="user-avatar" src="" alt="User Avatar">
+                <span id="user-email"></span>
+                <button id="logout-btn">Log Out</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div id="editor-panel">
+                <div class="editor-header">
+                    <h3 id="editor-title">New Note</h3>
+                    <div id="editor-actions">
+                        <button id="refine-btn" class="action-btn"><svg><use xlink:href="#icon-refine"></use></svg> Refine with AI</button>
+                        <button id="copy-btn" class="icon-btn" title="Copy Text"><svg><use xlink:href="#icon-copy"></use></svg></button>
+                        <button id="download-btn" class="icon-btn" title="Download .txt"><svg><use xlink:href="#icon-download"></use></svg></button>
+                        <button id="delete-btn" class="icon-btn danger" title="Delete Note"><svg><use xlink:href="#icon-delete"></use></svg></button>
+                    </div>
+                </div>
+                <textarea id="note-textarea" placeholder="Click 'Start Scribing' and begin speaking..."></textarea>
+                <div class="editor-footer">
+                    <button id="start-scribing-btn" class="primary-btn"><svg><use xlink:href="#icon-mic"></use></svg> Start Scribing</button>
+                    <div id="status-indicator">
+                        <span id="recording-dot"></span>
+                        <span id="status-text">Ready</span>
+                    </div>
+                    <button id="save-note-btn" class="secondary-btn"><svg><use xlink:href="#icon-save"></use></svg> Save Note</button>
+                </div>
+            </div>
+            <div id="welcome-panel">
+                <h1>Welcome to ScribeAI</h1>
+                <p>Click the <svg class="inline-svg"><use xlink:href="#icon-plus"></use></svg> button in the sidebar to create your first note.</p>
+            </div>
+        </main>
+    </div>
+
+    <div id="notification-area"></div>
+    <div id="loader-overlay" style="display: none;">
+        <div class="spinner"></div>
+        <p>AI is refining your text...</p>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>
