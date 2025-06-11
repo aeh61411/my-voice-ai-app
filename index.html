@@ -12,15 +12,16 @@
         textarea { width: 100%; margin-bottom: 20px; border-radius: 8px; border: 2px solid #4a4a68; padding: 12px; font-size: 16px; font-family: inherit; resize: vertical; background-color: #1a1a2e; color: #e0e0e0; box-sizing: border-box; outline: none; transition: all 0.3s; }
         textarea:focus { border-color: #00ffff; box-shadow: 0 0 10px #00ffff; }
         button { background-color: transparent; border: 2px solid; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; margin: 5px; }
-        .tab-nav { display: flex; border-bottom: 2px solid #4a4a68; margin-bottom: 25px; }
-        .tab-nav button { border: none; border-bottom: 3px solid transparent; box-shadow: none; border-radius: 0; color: #aaa; padding-bottom: 15px; margin: 0 10px; }
+        .tab-nav { display: flex; justify-content: center; border-bottom: 2px solid #4a4a68; margin-bottom: 25px; }
+        .tab-nav button { border: none; border-bottom: 3px solid transparent; box-shadow: none; border-radius: 0; color: #aaa; padding-bottom: 15px; margin: 0 15px; }
         .tab-nav button.active { color: #fff; border-bottom-color: #ff00ff; text-shadow: 0 0 5px #ff00ff; }
         .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 12px; color: #aaa; }
         
         #google-login-btn { font-size: 16px; padding: 12px 24px; color: #4285F4; border-color: #4285F4; box-shadow: 0 0 5px #4285F4, 0 0 15px #4285F4; }
-        #start-btn { color: #ff00ff; border-color: #ff00ff; box-shadow: 0 0 5px #ff00ff, 0 0 15px #ff00ff; }
-        #brainstorm-btn { color: #34A853; border-color: #34A853; box-shadow: 0 0 5px #34A853, 0 0 15px #34A853; }
-        #start-chat-btn { color: #fbbc05; border-color: #fbbc05; box-shadow: 0 0 5px #fbbc05, 0 0 15px #fbbc05; }
+        #start-btn { color: #ff00ff; border-color: #ff00ff; }
+        #brainstorm-btn { color: #34A853; border-color: #34A853; }
+        #start-chat-btn { color: #fbbc05; border-color: #fbbc05; }
+        #activate-wake-word-btn { color: #00ffff; border-color: #00ffff; }
         #logout-btn { color: #EA4335; border-color: #EA4335; box-shadow: none; padding: 8px 12px; font-size: 12px; }
 
         #login-section { display: block; padding-top: 50px; }
@@ -32,8 +33,8 @@
         .chat-message { margin-bottom: 10px; line-height: 1.5; }
         .user-message { color: #00ffff; }
         .ai-message { color: #e0e0e0; }
-        #chat-status { margin-top: 15px; font-style: italic; color: #888; }
-        #ai-response { min-height: 100px; background-color: #1a1a2e; padding: 15px; border-radius: 8px; white-space: pre-wrap; margin-top: 20px; text-align: left;}
+        #chat-status, .voice-select-label { margin-top: 15px; font-style: italic; color: #888; }
+        #voice-select { background-color: #1a1a2e; color: #e0e0e0; border: 1px solid #4a4a68; border-radius: 4px; padding: 5px; margin-left: 10px; }
     </style>
 </head>
 <body>
@@ -55,24 +56,25 @@
                 <button id="chatbot-tab-btn">Live AI Chat</button>
             </div>
 
-            <!-- Panel 1: Voice Writer -->
             <div id="voice-writer-panel">
                 <textarea id="note-textarea" placeholder="Speak your notes here..." rows="10"></textarea>
                 <button id="start-btn">Start Listening</button>
             </div>
 
-            <!-- Panel 2: AI Brainstormer -->
             <div id="brainstormer-panel">
                 <textarea id="brainstorm-input" placeholder="Give the AI a topic..." rows="4"></textarea>
                 <button id="brainstorm-btn">Ask Gemini for Ideas</button>
-                <div id="ai-response">AI ideas will appear here...</div>
+                <div id="ai-response" style="min-height: 100px; background-color: #1a1a2e; padding: 15px; border-radius: 8px; white-space: pre-wrap; margin-top: 20px;">AI ideas will appear here...</div>
             </div>
 
-            <!-- Panel 3: Live AI Chatbot -->
             <div id="chatbot-panel">
                 <div id="chat-history"></div>
                 <button id="start-chat-btn">Start Conversation</button>
-                <p id="chat-status">Click the button above to start talking to the AI.</p>
+                <button id="activate-wake-word-btn">Activate Wake Word</button>
+                <p id="chat-status">Ready to chat!</p>
+                <div class="voice-select-label">
+                    AI Voice: <select id="voice-select"></select>
+                </div>
             </div>
         </div>
     </div>
@@ -82,168 +84,63 @@
         const SUPABASE_URL = 'https://dmwnttcisinyuprdizvh.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtd250dGNpc2lueXVwcmRpenZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2MDQxOTMsImV4cCI6MjA2NTE4MDE5M30.4X4cuJhCR8A6ep6-SHT3dUZxRtKu6C_sGJku1ooN2aM';
         const GEMINI_API_KEY = 'AIzaSyDA_bqi2X7kLKjV5oGsGVLA-R4E7p287s0';
-
-        const { createClient } = supabase;
-        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const synthesis = window.speechSynthesis;
-
-        const el = {
-            loginSection: document.getElementById('login-section'), mainAppSection: document.getElementById('main-app-section'), googleLoginBtn: document.getElementById('google-login-btn'), logoutBtn: document.getElementById('logout-btn'), userInfo: document.getElementById('user-info'),
-            voiceTabBtn: document.getElementById('voice-tab-btn'), brainstormTabBtn: document.getElementById('brainstorm-tab-btn'), chatbotTabBtn: document.getElementById('chatbot-tab-btn'),
-            voiceWriterPanel: document.getElementById('voice-writer-panel'), brainstormerPanel: document.getElementById('brainstormer-panel'), chatbotPanel: document.getElementById('chatbot-panel'),
-            startChatBtn: document.getElementById('start-chat-btn'), chatHistory: document.getElementById('chat-history'), chatStatus: document.getElementById('chat-status'),
-            startBtn: document.getElementById('start-btn'), noteTextarea: document.getElementById('note-textarea'),
-            brainstormBtn: document.getElementById('brainstorm-btn'), brainstormInput: document.getElementById('brainstorm-input'), aiResponseDiv: document.getElementById('ai-response')
-        };
-
-        function showTab(panelToShow, btnToActivate) {
-            [el.voiceWriterPanel, el.brainstormerPanel, el.chatbotPanel].forEach(p => p.style.display = 'none');
-            [el.voiceTabBtn, el.brainstormTabBtn, el.chatbotTabBtn].forEach(b => b.classList.remove('active'));
-            panelToShow.style.display = 'block';
-            btnToActivate.classList.add('active');
-        }
-        el.voiceTabBtn.onclick = () => showTab(el.voiceWriterPanel, el.voiceTabBtn);
-        el.brainstormTabBtn.onclick = () => showTab(el.brainstormerPanel, el.brainstormTabBtn);
-        el.chatbotTabBtn.onclick = () => showTab(el.chatbotPanel, el.chatbotTabBtn);
-
-        el.googleLoginBtn.onclick = async () => await _supabase.auth.signInWithOAuth({ provider: 'google' });
-        el.logoutBtn.onclick = async () => await _supabase.auth.signOut();
-        _supabase.auth.onAuthStateChange((_event, session) => {
-            if (session) {
-                el.loginSection.style.display = 'none';
-                el.mainAppSection.style.display = 'block';
-                el.userInfo.textContent = `Logged in as: ${session.user.email}`;
-            } else {
-                el.loginSection.style.display = 'block';
-                el.mainAppSection.style.display = 'none';
-            }
-        });
+        
+        // --- GLOBAL SETUP & ELEMENT GETTING (Same as before) ---
+        // (This part is long, so it's kept concise for the explanation)
+        const { createClient } = supabase; const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY); const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; const synthesis = window.speechSynthesis; const el = { loginSection: document.getElementById('login-section'), mainAppSection: document.getElementById('main-app-section'), googleLoginBtn: document.getElementById('google-login-btn'), logoutBtn: document.getElementById('logout-btn'), userInfo: document.getElementById('user-info'), voiceTabBtn: document.getElementById('voice-tab-btn'), brainstormTabBtn: document.getElementById('brainstorm-tab-btn'), chatbotTabBtn: document.getElementById('chatbot-tab-btn'), voiceWriterPanel: document.getElementById('voice-writer-panel'), brainstormerPanel: document.getElementById('brainstormer-panel'), chatbotPanel: document.getElementById('chatbot-panel'), startChatBtn: document.getElementById('start-chat-btn'), chatHistory: document.getElementById('chat-history'), chatStatus: document.getElementById('chat-status'), startBtn: document.getElementById('start-btn'), noteTextarea: document.getElementById('note-textarea'), brainstormBtn: document.getElementById('brainstorm-btn'), brainstormInput: document.getElementById('brainstorm-input'), aiResponseDiv: document.getElementById('ai-response'), activateWakeWordBtn: document.getElementById('activate-wake-word-btn'), voiceSelect: document.getElementById('voice-select') };
+        function showTab(panelToShow, btnToActivate) { [el.voiceWriterPanel, el.brainstormerPanel, el.chatbotPanel].forEach(p => p.style.display = 'none'); [el.voiceTabBtn, el.brainstormTabBtn, el.chatbotTabBtn].forEach(b => b.classList.remove('active')); panelToShow.style.display = 'block'; btnToActivate.classList.add('active'); }
+        el.voiceTabBtn.onclick = () => showTab(el.voiceWriterPanel, el.voiceTabBtn); el.brainstormTabBtn.onclick = () => showTab(el.brainstormerPanel, el.brainstormTabBtn); el.chatbotTabBtn.onclick = () => showTab(el.chatbotPanel, el.chatbotTabBtn);
+        el.googleLoginBtn.onclick = async () => await _supabase.auth.signInWithOAuth({ provider: 'google' }); el.logoutBtn.onclick = async () => await _supabase.auth.signOut();
+        _supabase.auth.onAuthStateChange((_event, session) => { if (session) { el.loginSection.style.display = 'none'; el.mainAppSection.style.display = 'block'; el.userInfo.textContent = `Logged in as: ${session.user.email}`; } else { el.loginSection.style.display = 'block'; el.mainAppSection.style.display = 'none'; } });
 
         // --- TAB 1: VOICE WRITER LOGIC ---
-        if (SpeechRecognition) {
-            const writerRecognition = new SpeechRecognition();
-            writerRecognition.continuous = true; writerRecognition.interimResults = true; let isWriterListening = false; let writerFinalTranscript = '';
-            writerRecognition.onstart = () => { isWriterListening = true; el.startBtn.textContent = 'Stop Listening'; writerFinalTranscript = el.noteTextarea.value; };
-            writerRecognition.onend = () => { isWriterListening = false; el.startBtn.textContent = 'Start Listening'; };
-            writerRecognition.onresult = (event) => { let interim = ''; for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) { writerFinalTranscript += event.results[i][0].transcript + ' '; } else { interim += event.results[i][0].transcript; } } el.noteTextarea.value = writerFinalTranscript + interim; };
-            el.startBtn.onclick = () => { if (isWriterListening) { writerRecognition.stop(); } else { writerRecognition.start(); } };
-        }
+        if (SpeechRecognition) { const writerRecognition = new SpeechRecognition(); writerRecognition.continuous = true; writerRecognition.interimResults = true; let isWriterListening = false; let writerFinalTranscript = ''; writerRecognition.onstart = () => { isWriterListening = true; el.startBtn.textContent = 'Stop Listening'; writerFinalTranscript = el.noteTextarea.value; }; writerRecognition.onend = () => { isWriterListening = false; el.startBtn.textContent = 'Start Listening'; }; writerRecognition.onresult = (event) => { let interim = ''; for (let i = event.resultIndex; i < event.results.length; ++i) { if (event.results[i].isFinal) { writerFinalTranscript += event.results[i][0].transcript + ' '; } else { interim += event.results[i][0].transcript; } } el.noteTextarea.value = writerFinalTranscript + interim; }; el.startBtn.onclick = () => { if (isWriterListening) { writerRecognition.stop(); } else { writerRecognition.start(); } }; }
 
         // --- TAB 2: BRAINSTORMER LOGIC ---
-        async function getAIResponse(topic) {
-            el.aiResponseDiv.textContent = '🧠 Thinking of brilliant ideas...';
-            const prompt = `You are a creative business consultant. A user wants business ideas based on the topic: "${topic}". Please provide 3-5 innovative and actionable business ideas. Format them clearly with bullet points.`;
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ "contents": [{ "parts": [{ "text": prompt }] }] })
-                });
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                const data = await response.json();
-                el.aiResponseDiv.textContent = data.candidates[0].content.parts[0].text;
-            } catch (error) {
-                console.error("Error with Gemini API:", error);
-                el.aiResponseDiv.textContent = 'Sorry, the AI is taking a nap. Please check your API key and billing settings in Google Cloud.';
-            }
-        }
-        el.brainstormBtn.onclick = () => {
-            const topic = el.brainstormInput.value;
-            if (topic) getAIResponse(topic); else alert('Please enter a topic for the AI to brainstorm!');
-        };
+        async function getAIResponse(topic) { el.aiResponseDiv.textContent = '🧠 Thinking...'; const prompt = `As a business consultant, give me 3-5 innovative ideas for: "${topic}". Format them clearly.`; try { const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "contents": [{ "parts": [{ "text": prompt }] }] }) }); if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`); const data = await response.json(); el.aiResponseDiv.textContent = data.candidates[0].content.parts[0].text; } catch (error) { console.error("Error:", error); el.aiResponseDiv.textContent = 'AI Error. Check API key and billing.'; } }
+        el.brainstormBtn.onclick = () => { const topic = el.brainstormInput.value; if (topic) getAIResponse(topic); else alert('Please enter a topic!'); };
 
-        // --- TAB 3: LIVE CHATBOT LOGIC ---
-        let chatHistory = []; let isChatting = false; let femaleVoice = null;
+        // --- TAB 3: LIVE CHATBOT LOGIC (UPGRADED!) ---
+        let chatHistory = []; let isChatting = false; let voices = [];
         
-        // UPGRADE: Load voices and find a good female one
-        function loadVoices() {
-            const voices = synthesis.getVoices();
-            // Try to find a high-quality female voice. These names are common across browsers.
-            femaleVoice = voices.find(v => v.name.includes('Google US English') && v.name.includes('Female')) || 
-                          voices.find(v => v.name.includes('Zira')) || // Windows
-                          voices.find(v => v.name.includes('Samantha')) || // Mac
-                          voices.find(v => v.lang.startsWith('en') && v.name.includes('Female')); // A generic fallback
-        }
-        synthesis.onvoiceschanged = loadVoices;
-        loadVoices(); // Initial load
+        function populateVoiceList() { voices = synthesis.getVoices(); el.voiceSelect.innerHTML = ''; voices.filter(v => v.lang.startsWith('en')).forEach(voice => { const option = document.createElement('option'); option.textContent = `${voice.name} (${voice.lang})`; option.setAttribute('data-name', voice.name); el.voiceSelect.appendChild(option); }); }
+        populateVoiceList(); if (synthesis.onvoiceschanged !== undefined) { synthesis.onvoiceschanged = populateVoiceList; }
 
-        function addToChatHistory(speaker, text) {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('chat-message', `${speaker}-message`);
-            messageDiv.textContent = `${speaker.charAt(0).toUpperCase() + speaker.slice(1)}: ${text}`;
-            el.chatHistory.appendChild(messageDiv);
-            el.chatHistory.scrollTop = el.chatHistory.scrollHeight;
-        }
+        function addToChatHistory(speaker, text) { const messageDiv = document.createElement('div'); messageDiv.classList.add('chat-message', `${speaker}-message`); messageDiv.textContent = `${speaker.charAt(0).toUpperCase() + speaker.slice(1)}: ${text}`; el.chatHistory.appendChild(messageDiv); el.chatHistory.scrollTop = el.chatHistory.scrollHeight; }
 
-        function speakText(text, onEndCallback) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            if (femaleVoice) { utterance.voice = femaleVoice; } // Use the selected female voice
-            utterance.onend = onEndCallback;
-            synthesis.speak(utterance);
-        }
+        function speakText(text, onEndCallback) { const utterance = new SpeechSynthesisUtterance(text); const selectedVoiceName = el.voiceSelect.selectedOptions[0].getAttribute('data-name'); const selectedVoice = voices.find(v => v.name === selectedVoiceName); if (selectedVoice) { utterance.voice = selectedVoice; } utterance.onend = onEndCallback; synthesis.speak(utterance); }
 
-        async function sendToGeminiForChat() {
-            el.chatStatus.textContent = "AI is thinking...";
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ "contents": chatHistory })
-                });
-                const data = await response.json();
-                const aiText = data.candidates[0].content.parts[0].text;
-                addToChatHistory('ai', aiText);
-                chatHistory.push({ role: 'model', parts: [{ text: aiText }] });
-                speakText(aiText, () => {
-                    // UPGRADE: Automatically start listening after AI speaks
-                    if (isChatting) {
-                        el.chatStatus.textContent = "Your turn. I'm listening...";
-                        chatRecognition.start();
-                    }
-                });
-            } catch (error) {
-                el.chatStatus.textContent = "An error occurred. Ending conversation.";
-                console.error(error);
-                isChatting = false;
-                el.startChatBtn.textContent = "Start Conversation";
-            }
-        }
+        async function sendToGeminiForChat() { el.chatStatus.textContent = "AI is thinking..."; try { const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ "contents": chatHistory }) }); const data = await response.json(); const aiText = data.candidates[0].content.parts[0].text; addToChatHistory('ai', aiText); chatHistory.push({ role: 'model', parts: [{ text: aiText }] }); speakText(aiText, () => { if (isChatting) { el.chatStatus.textContent = "Your turn. I'm listening..."; chatRecognition.start(); } }); } catch (error) { el.chatStatus.textContent = "Error. Ending chat."; console.error(error); isChatting = false; el.startChatBtn.textContent = "Start Conversation"; } }
         
         if (SpeechRecognition) {
-            const chatRecognition = new SpeechRecognition();
-            chatRecognition.continuous = false; // Stop after one phrase
-            chatRecognition.onresult = (event) => {
-                const userText = event.results[0][0].transcript;
-                addToChatHistory('user', userText);
-                chatHistory.push({ role: 'user', parts: [{ text: userText }] });
-                sendToGeminiForChat();
-            };
-            el.startChatBtn.onclick = () => {
-                if (isChatting) {
-                    isChatting = false;
-                    chatRecognition.stop();
-                    synthesis.cancel(); // Stop any speaking
-                    el.chatStatus.textContent = "Conversation ended.";
-                    el.startChatBtn.textContent = "Start Conversation";
-                } else {
-                    isChatting = true;
-                    el.startChatBtn.textContent = "End Conversation";
-                    el.chatStatus.textContent = "I'm listening...";
-                    el.chatHistory.innerHTML = ''; chatHistory = [];
-                    // Initial prompt to set the AI's personality
-                    chatHistory.push({ role: 'user', parts: [{ text: 'Hello! I want to brainstorm some ideas with you.' }] });
-                    chatHistory.push({ role: 'model', parts: [{ text: 'Of course! I\'d love to help. What topic is on your mind today?' }] });
-                    addToChatHistory('ai', 'Of course! I\'d love to help. What topic is on your mind today?');
-                    speakText('Of course! I\'d love to help. What topic is on your mind today?', () => {
-                        if (isChatting) {
-                            el.chatStatus.textContent = "Your turn. I'm listening...";
-                            chatRecognition.start();
-                        }
-                    });
+            const chatRecognition = new SpeechRecognition(); chatRecognition.continuous = false;
+            chatRecognition.onresult = (event) => { const userText = event.results[0][0].transcript; addToChatHistory('user', userText); chatHistory.push({ role: 'user', parts: [{ text: userText }] }); sendToGeminiForChat(); };
+            el.startChatBtn.onclick = () => { if (isChatting) { isChatting = false; chatRecognition.stop(); synthesis.cancel(); el.chatStatus.textContent = "Conversation ended."; el.startChatBtn.textContent = "Start Conversation"; } else { isChatting = true; el.startChatBtn.textContent = "End Conversation"; el.chatStatus.textContent = "I'm listening..."; el.chatHistory.innerHTML = ''; chatHistory = []; chatHistory.push({ role: 'user', parts: [{ text: 'Hello! I want to brainstorm some ideas.' }] }); chatHistory.push({ role: 'model', parts: [{ text: 'Of course! I am ready to help. What topic is on your mind?' }] }); addToChatHistory('ai', 'Of course! I am ready to help. What topic is on your mind?'); speakText('Of course! I am ready to help. What topic is on your mind?', () => { if (isChatting) { el.chatStatus.textContent = "Your turn. I'm listening..."; chatRecognition.start(); } }); } };
+            
+            // --- NEW: Wake Word Logic ---
+            const wakeWordRecognition = new SpeechRecognition(); wakeWordRecognition.continuous = true; let isWakeWordActive = false;
+            wakeWordRecognition.onresult = (event) => {
+                const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
+                if (transcript.includes('hello gemi') || transcript.includes('hi gemi')) {
+                    el.chatStatus.textContent = "Wake word detected! Starting chat...";
+                    wakeWordRecognition.stop();
+                    el.startChatBtn.click(); // Programmatically click the start chat button
                 }
             };
+            el.activateWakeWordBtn.onclick = () => {
+                if(isWakeWordActive) {
+                    isWakeWordActive = false;
+                    wakeWordRecognition.stop();
+                    el.chatStatus.textContent = "Wake word deactivated.";
+                    el.activateWakeWordBtn.style.borderColor = '#00ffff';
+                } else {
+                    isWakeWordActive = true;
+                    wakeWordRecognition.start();
+                    el.chatStatus.textContent = "Wake word activated. Say 'Hello Gemi' to start.";
+                    el.activateWakeWordBtn.style.borderColor = '#fbbc05'; // Change color to show it's active
+                }
+            }
         }
-
     </script>
 </body>
 </html>
