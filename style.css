@@ -1,0 +1,30 @@
+/* style.css */
+body { font-family: 'Consolas', 'Courier New', monospace; background-color: #0c0c14; color: #e0e0e0; margin: 0; padding: 40px 20px; }
+.container { background-color: rgba(26, 26, 46, 0.5); padding: 30px; border-radius: 12px; border: 1px solid #333; box-shadow: 0 0 25px rgba(100, 100, 220, 0.2); text-align: center; width: 90%; max-width: 800px; backdrop-filter: blur(8px); margin: auto; min-height: 600px; }
+h1 { font-size: 28px; margin-bottom: 25px; color: #fff; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 0 7px #00ffff, 0 0 15px #00ffff, 0 0 30px #00ffff, 0 0 45px #ff00ff; }
+textarea, input[type="text"] { width: 100%; margin-bottom: 20px; border-radius: 8px; border: 2px solid #4a4a68; padding: 12px; font-size: 16px; font-family: inherit; resize: vertical; background-color: #1a1a2e; color: #e0e0e0; box-sizing: border-box; outline: none; transition: all 0.3s; }
+textarea:focus, input[type="text"]:focus { border-color: #00ffff; box-shadow: 0 0 10px #00ffff; }
+button { background-color: transparent; border: 2px solid; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; margin: 5px; }
+.tab-nav { display: flex; justify-content: center; border-bottom: 2px solid #4a4a68; margin-bottom: 25px; }
+.tab-nav button { border: none; border-bottom: 3px solid transparent; box-shadow: none; border-radius: 0; color: #aaa; padding-bottom: 15px; margin: 0 15px; }
+.tab-nav button.active { color: #fff; border-bottom-color: #ff00ff; text-shadow: 0 0 5px #ff00ff; }
+.app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 12px; color: #aaa; }
+.user-profile-header { display: flex; align-items: center; gap: 10px; }
+.header-avatar { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #00ffff; }
+#google-login-btn { font-size: 16px; padding: 12px 24px; color: #4285F4; border-color: #4285F4; }
+#logout-btn, #profile-tab-btn { color: #EA4335; border-color: #EA4335; box-shadow: none; padding: 8px 12px; font-size: 12px; }
+#start-btn, #save-profile-btn { color: #ff00ff; border-color: #ff00ff; }
+#brainstorm-btn, #upload-avatar-btn { color: #34A853; border-color: #34A853; }
+#start-chat-btn { color: #fbbc05; border-color: #fbbc05; }
+#login-section { display: block; padding-top: 50px; }
+#main-app-section { display: none; }
+.tab-panel { display: none; }
+.tab-panel.active-panel { display: block; }
+#chat-history { height: 300px; overflow-y: auto; border: 1px solid #4a4a68; border-radius: 8px; padding: 15px; margin-bottom: 20px; text-align: left; background-color: #1a1a2e; }
+.chat-message { margin-bottom: 10px; line-height: 1.5; }
+.user-message { color: #00ffff; font-weight: bold; }
+.ai-message { color: #e0e0e0; }
+#chat-status, .voice-select-label { margin-top: 15px; font-style: italic; color: #888; }
+#voice-select { background-color: #1a1a2e; color: #e0e0e0; border: 1px solid #4a4a68; border-radius: 4px; padding: 5px; margin-left: 10px; }
+#ai-response { min-height: 100px; background-color: #1a1a2e; padding: 15px; border-radius: 8px; white-space: pre-wrap; margin-top: 20px; text-align: left;}
+.profile-avatar { width: 100px; height: 100px; border-radius: 50%; margin-bottom: 20px; border: 3px solid #ff00ff; object-fit: cover; }
