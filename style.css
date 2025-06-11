@@ -12,7 +12,8 @@ button { background-color: transparent; border: 2px solid; padding: 10px 20px; b
 .user-profile-header { display: flex; align-items: center; gap: 10px; }
 .header-avatar { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #00ffff; }
 #google-login-btn { font-size: 16px; padding: 12px 24px; color: #4285F4; border-color: #4285F4; }
-#logout-btn, #profile-tab-btn { color: #EA4335; border-color: #EA4335; box-shadow: none; padding: 8px 12px; font-size: 12px; }
+button[data-target="profile-panel"], #logout-btn { color: #aaa; border-color: #4a4a68; box-shadow: none; padding: 8px 12px; font-size: 12px; }
+button[data-target="profile-panel"]:hover, #logout-btn:hover { color: #fff; border-color: #EA4335; }
 #start-btn, #save-profile-btn { color: #ff00ff; border-color: #ff00ff; }
 #brainstorm-btn, #upload-avatar-btn { color: #34A853; border-color: #34A853; }
 #start-chat-btn { color: #fbbc05; border-color: #fbbc05; }
